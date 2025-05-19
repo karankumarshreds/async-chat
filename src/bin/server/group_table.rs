@@ -1,8 +1,11 @@
 #![allow(unused)]
 use crate::group::Group;
-use std::{collections::HashMap, sync::{Mutex, Arc}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
-pub struct GroupTable (Mutex<HashMap<Arc<String>, Arc<Group>>>);
+pub struct GroupTable(Mutex<HashMap<String, Arc<Group>>>);
 
 impl GroupTable {
     pub fn new() -> Self {
@@ -10,16 +13,19 @@ impl GroupTable {
     }
 
     pub fn get(&self, name: &String) -> Option<Arc<Group>> {
-        self.0.lock()
-        .expect("Should attain lock")
-        .get(name)
-        .cloned()
+        self.0
+            .lock()
+            .expect("Should attain lock")
+            .get(name)
+            .cloned()
     }
 
-    pub fn get_or_create(&self, name: Arc<String>) -> Arc<Group> {
-        self.0.lock().expect("Should attain lock here.").entry(name.clone()).or_insert_with(|| Arc::new(Group::new(name)))
-        .clone()
+    pub fn get_or_create(&self, name: String) -> Arc<Group> {
+        self.0
+            .lock()
+            .expect("Should attain lock here.")
+            .entry(name.clone())
+            .or_insert_with(|| Group::new(name).into())
+            .clone()
     }
 }
-
-    
