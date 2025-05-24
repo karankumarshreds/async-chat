@@ -1,10 +1,10 @@
-use chat::utils::ChatResult;
 use async_std::prelude::*;
-use async_std::{net, task, sync::Arc};
+use async_std::{net, sync::Arc, task};
+use chat::utils::ChatResult;
 
-mod group_table;
-mod group;
 mod connection;
+mod group;
+mod group_table;
 
 fn main() -> ChatResult<()> {
     let port = std::env::args().nth(1).expect("Usage: 'server PORT'");
@@ -17,10 +17,10 @@ async fn start(port: String) -> ChatResult<()> {
     let chat_group_table = Arc::new(group_table::GroupTable::new());
     let mut new_connections = listener.incoming();
     while let Some(socket_result) = new_connections.next().await {
-        let socket = socket_result?;
+        let client_socket = socket_result?;
         let groups = chat_group_table.clone();
         task::spawn(async {
-            if let Err(err) = connection::serve(socket, groups).await {
+            if let Err(err) = connection::serve(client_socket, groups).await {
                 eprintln!("Error while serving: {}", err);
             }
         });

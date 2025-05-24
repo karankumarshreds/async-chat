@@ -8,13 +8,11 @@ use chat::utils::{self, ChatResult};
 use chat::{FromClient, FromServer};
 
 pub async fn serve(
-    socket: net::TcpStream,
+    client_socket: net::TcpStream,
     group_table: Arc<group_table::GroupTable>,
 ) -> ChatResult<()> {
-    // let outbound = Arc::new(Outbound::new(socket.clone()));
-    let outbound = Outbound::new(socket.clone());
-    let buffered = BufReader::new(socket);
-    let mut from_client = utils::receive_as_json(buffered);
+    let outbound = Outbound::new(client_socket.clone()); // regular clone
+    let mut from_client = utils::receive_as_json(BufReader::new(client_socket));
     while let Some(request_result) = from_client.next().await {
         let request = request_result?;
         let _result: ChatResult<()> = match request {
