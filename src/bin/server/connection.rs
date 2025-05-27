@@ -4,6 +4,7 @@ use async_std::net;
 use async_std::prelude::*;
 use async_std::sync::Arc;
 
+use async_std::sync::Mutex;
 use chat::utils::{self, ChatResult};
 use chat::{FromClient, FromServer};
 
@@ -36,20 +37,20 @@ pub async fn serve(
     Ok(())
 }
 
-#[derive(Clone)]
-pub struct Outbound(net::TcpStream);
+pub struct Outbound(Mutex<net::TcpStream>);
 
 impl Outbound {
     pub fn new(to_server: net::TcpStream) -> Self {
-        Self(to_server)
+        Self(Mutex::new(to_server))
     }
 
     pub async fn send(&self, packet: FromServer) -> ChatResult<()> {
-        let mut to_server = self.0.clone(); // Arc clone: in case there are more than 1 person
-                                            // trying to send the message to the same socket at
-                                            // the same time, otherwise it would create absursion
-                                            // in the json message
-        utils::send_as_json(&mut to_server, &packet).await?;
+        let mut to_server = self.0.lock().await; // Arc clone: in case there are more than 1 person
+                                                 // trying to send the message to the same socket at
+                                                 // the same time, otherwise it would create absursion
+                                                 // in the json message
+        utils::send_as_json(&mut *to_server, &packet).await?;
+        to_server.flush().await?;
         Ok(())
     }
 }
